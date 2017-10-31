@@ -2,12 +2,16 @@ package models
 
 import (
 	"fmt"
+	"net/http"
+	"WorkingPromo/Utils"
 )
 
-func Prom() {
+//Это типа метод который на http запрос отвечает тем что есть в таблице userinfo, так же для теста использовал
+// чисто посмотреть что кого, так же через rows.next ходит по строкам, как в джаве вообщем.
+func Prom(w http.ResponseWriter) {
 	rows, err := db.Query("SELECT * FROM userinfo")
 	if err != nil {
-		fmt.Print("e")
+		fmt.Print("ear")
 	}
 	defer rows.Close()
 
@@ -15,16 +19,10 @@ func Prom() {
 	for rows.Next() {
 		var username string
 		err = rows.Scan(&username)
-		checkErra(err)
-		fmt.Println("hello world " + username)
+		Utils.CheckError(err)
+		fmt.Fprintln(w, "Hi there, I love ", username)
 	}
 	if err = rows.Err(); err != nil {
-		fmt.Print("ll")
-	}
-	fmt.Print("ll")
-}
-func checkErra(err error) {
-	if err != nil {
-		panic(err)
+		fmt.Print("error")
 	}
 }
