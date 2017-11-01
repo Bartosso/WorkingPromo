@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 )
 
+//Тут типа сами товары будут, еще толком не занимался этим
 type GoodsInner struct {
 	guid_agent string `xml:"guid_agent"`
 
