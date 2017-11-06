@@ -6,6 +6,7 @@ import (
 	"WorkingPromo/Utils"
 	"WorkingPromo/XMLParsers"
 	"io/ioutil"
+	"fmt"
 )
 //Обновляет в бд папки игр и секции в данных папках
 func updateGameFoldersAndInnerSectionsInDB(xmlStruct *XMLParsers.SectionXML)  {
@@ -145,4 +146,29 @@ func UpdateBigFoldersAndGamesFromSections() {
 	updateBigFoldersInBD(structs)
 	updateGamesInDB(structs)
 
+}
+
+//Достает все секции из бд в виде массива стринг и отдаем нам
+func GetSectionsIDFromDB() []string {
+	rows, err := db.Query("select id from games_sections")
+	Utils.CheckError(err)
+
+	defer rows.Close()
+
+	var slice = make([]string,0)
+
+	for rows.Next() {
+		var id string
+		err = rows.Scan(&id)
+		Utils.CheckError(err)
+
+		slice = append(slice,id)
+	}
+
+	//test
+
+	fmt.Println("Got slice!")
+
+	//test
+	return slice
 }
