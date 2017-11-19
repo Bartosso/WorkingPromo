@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"net/http"
 	"WorkingPromo/Utils"
-	"WorkingPromo/XMLParsers"
+	"WorkingPromo/Parsers/XMLParsers"
+	"WorkingPromo/Parsers/JsonParsers"
+	"encoding/json"
 	"io/ioutil"
 	"fmt"
 )
@@ -48,9 +50,7 @@ func updateGameFoldersAndInnerSectionsInDB(xmlStruct *XMLParsers.SectionXML)  {
 				Utils.CheckError(err)
 				}
 			}
-			_, err = stmt.Exec(xmlStruct.Folders[count].FolderID, xmlStruct.Folders[count].FolderName,
-				xmlStruct.Folders[count].CNTGoods)
-			Utils.CheckError(err)
+			break
 		}
 	}
 	err = tx.Commit()
@@ -171,4 +171,67 @@ func GetSectionsIDFromDB() []string {
 
 	//test
 	return slice
+}
+
+func GetAvailableGamesSectionsAndFoldersViaJson() *[]byte {
+	rows, err := db.Query("select * from games_folders")
+	Utils.CheckError(err)
+
+	defer rows.Close()
+	var slice = make([]JsonParsers.GamesSectionsAndFoldersJson,0)
+
+	for rows.Next() {
+		var folder JsonParsers.GamesSectionsAndFoldersJson
+		err = rows.Scan(&folder.Id,&folder.Name,&folder.Count)
+		folder.Type = "gamefolder"
+
+		Utils.CheckError(err)
+
+		slice = append(slice,folder)
+	}
+	rows, err = db.Query("select id,name_section,count_goods from games_sections where parent_folder = '0'")
+	Utils.CheckError(err)
+
+	for rows.Next() {
+		var folder JsonParsers.GamesSectionsAndFoldersJson
+		err = rows.Scan(&folder.Id,&folder.Name,&folder.Count)
+		folder.Type = "gamesection"
+
+		Utils.CheckError(err)
+
+		slice = append(slice,folder)
+	}
+
+	jsone,_ := json.Marshal(slice)
+	return &jsone
+
+}
+
+func GetSelectedByParentIDSections(parentId string) *[]byte {
+	rows, err := db.Query("select * from games_folders")
+	Utils.CheckError(err)
+
+	defer rows.Close()
+	var slice = make([]JsonParsers.GamesSectionsAndFoldersJson,0)
+
+	rows, err =
+		db.Query("select id,name_section,count_goods from games_sections where parent_folder = $1",parentId)
+	Utils.CheckError(err)
+
+	for rows.Next() {
+		var folder JsonParsers.GamesSectionsAndFoldersJson
+		err = rows.Scan(&folder.Id,&folder.Name,&folder.Count)
+		folder.Type = "gamesection"
+
+		Utils.CheckError(err)
+
+		slice = append(slice,folder)
+	}
+	if len(slice) == 0 {
+		return nil
+	}
+	jsone,_ := json.Marshal(slice)
+
+	return &jsone
+
 }

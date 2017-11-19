@@ -1,13 +1,15 @@
 package models
 
 import (
-	"WorkingPromo/XMLParsers"
+	"WorkingPromo/Parsers/XMLParsers"
 	"WorkingPromo/Utils"
 	"database/sql"
 	"net/http"
 	"bytes"
 	"io/ioutil"
 	"fmt"
+	"WorkingPromo/Parsers/JsonParsers"
+	"encoding/json"
 )
 
 //Берет на вход так же транзакцию, кидает в бд инфу по офферу не комитит, ничего интересного
@@ -112,5 +114,33 @@ func UpdateGamesOffersAndSellersStats() {
 
 
 	fmt.Println("Update Done!")
+}
+//Колхозно достаем офферы на игры, нужно обработать ошибки, а то пздц
+func GetOffersViaJson(sectionID string) *[]byte {
+	rows, err := db.Query("SELECT id,parent_section_id,offer_name,price,currency,discount,gift,id_seller " +
+		" FROM games_offers WHERE parent_section_id = $1 ORDER BY cast((SELECT replace(price, ',','.')) as DECIMAL)",sectionID)
+	Utils.CheckError(err)
+
+	defer rows.Close()
+	var slice = make([]JsonParsers.GamesOffersJson,0)
+
+	for rows.Next() {
+		var offer JsonParsers.GamesOffersJson
+		err = rows.Scan(
+			&offer.Id,
+			&offer.ParentId,
+			&offer.Name,
+			&offer.Price,
+			&offer.Currency,
+			&offer.Discount,
+			&offer.Gift,
+			&offer.IdSeller)
+
+		Utils.CheckError(err)
+
+		slice = append(slice, offer)
+	}
+	jsone,_ := json.Marshal(slice)
+	return &jsone
 }
 
